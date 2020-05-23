@@ -72,9 +72,9 @@ def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jit
     #Don't scale too much as we have small items
     choice = np.random.randint(0, high=2, size=None)
     if choice < 2:
-      scale = rand(0.9, 1.0)
-    else
-      scale = rand(1.01, 2.5)
+      scale = rand(1.0, 1.09)
+    else:
+      scale = rand(1.1, 2.5)
     
     
     if new_ar < 1:
