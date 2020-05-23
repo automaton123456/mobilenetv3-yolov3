@@ -20,7 +20,7 @@ import tensorflow as tf
 
 def _main():
     annotation_path = 'train.txt'
-    log_dir = 'logs/000/'
+    log_dir = '/content/drive/My Drive/Keras_Yolo/000/' #'logs/000/'
     classes_path = 'model_data/voc_classes.txt'
     anchors_path = 'model_data/yolo_anchors.txt'
     class_names = get_classes(classes_path)
@@ -98,7 +98,7 @@ def _main():
             callbacks=[logging, checkpoint, reduce_lr, early_stopping])
         model.save_weights(log_dir + 'trained_weights_final.h5',save_format='h5')
         model.save_weights(log_dir + 'tfweights/my_model')   #saved as tensorflow checkpoint
-        tf.keras.experimental.export_saved_model(model, log_dir + 'keras_savedmodel',custom_objects={'hard_swish':hard_swish,'relu6':relu6})  #saved as tensorflow savedmodel
+        tf.keras.models.save_model(model, log_dir + 'keras_savedmodel',custom_objects={'hard_swish':hard_swish,'relu6':relu6}, save_format="tf")  #saved as tensorflow savedmodel
         sess = K.get_session()
         saver = tf.train.Saver()
         sess.run(tf.global_variables_initializer())
