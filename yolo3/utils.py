@@ -68,7 +68,15 @@ def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jit
 
     # resize image
     new_ar = w/h * rand(1-jitter,1+jitter)/rand(1-jitter,1+jitter)
-    scale = rand(.25, 2)
+    
+    #Don't scale too much as we have small items
+    choice = np.random.randint(0, high=2, size=None)
+    if choice < 2:
+      scale = rand(0.9, 1.0)
+    else
+      scale = rand(1.01, 2.5)
+    
+    
     if new_ar < 1:
         nh = int(scale*h)
         nw = int(nh*new_ar)
