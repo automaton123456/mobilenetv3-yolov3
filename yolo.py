@@ -20,12 +20,12 @@ from tensorflow.keras.utils import multi_gpu_model
 
 class YOLO(object):
     _defaults = {
-        "model_path": 'logs/000/backup.h5',
-        "anchors_path": 'model_data/yolo_anchors.txt',
-        "classes_path": 'model_data/voc_classes.txt',
+        "model_path": 'backup.h5',
+        "anchors_path": 'yolo_anchors.txt',
+        "classes_path": 'voc_classes.txt',
         "score" : 0.25,
         "iou" : 0.45,
-        "model_image_size" : (416, 416),
+        "model_image_size" : (320, 320),
         "gpu_num" : 1,
     }
 
@@ -36,9 +36,17 @@ class YOLO(object):
         else:
             return "Unrecognized attribute name '" + n + "'"
 
-    def __init__(self, **kwargs):
+    def __init__(self, path, size, **kwargs):
         self.__dict__.update(self._defaults) # set up default values
         self.__dict__.update(kwargs) # and update with user overrides
+
+        if path is not None:
+          self.model_path=path + "/" + self.model_path
+          self.anchors_path=path + "/" + self.anchors_path
+          self.classes_path=path + "/" + self.classes_path
+
+        self.model_image_size=(size,size)
+
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
