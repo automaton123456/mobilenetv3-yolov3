@@ -5,7 +5,8 @@ class YOLO_Kmeans:
 
     def __init__(self, cluster_number, filename, path):
         self.cluster_number = cluster_number
-        self.filename = self.path + "/train.txt"
+        self.filename = path + "/train.txt"
+        self.path = path
 
     def iou(self, boxes, clusters):  # 1 box -> k clusters
         n = boxes.shape[0]
