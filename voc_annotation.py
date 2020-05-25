@@ -1,16 +1,5 @@
 import xml.etree.ElementTree as ET
 
-classes = ["fullgolfclub", "golfball", "golfclub", "golfer", "golfer_front"]
-
-#Write out our classes file
-classes_file = open('model_data/voc_classes.txt', 'w')
-classes_file.truncate(0)
-
-for myclass in classes:
-  classes_file.write(myclass + "\n")
-
-classes_file.close()
-
 def convert_annotation(xml, list_file):
     in_file = open(xml)
     tree=ET.parse(in_file)
@@ -33,9 +22,18 @@ def convert_annotation(xml, list_file):
 import glob
 import os
 
+
+parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+parser.add_argument('--path', type=str, help='Path to project files' )
+FLAGS = parser.parse_args()
+path = flags.path
+
+yolo = YOLO(path=FLAGS.path,size=FLAGS.size)
+
+
 all_files = glob.glob("/content/mobilenetv3-yolov3/AllDataStripped/*/*/*.xml")
 
-list_file = open('train.txt', 'w')
+list_file = open(path + '/train.txt', 'w')
 
 for xml in all_files:
   file, ext = os.path.splitext(xml)
@@ -52,4 +50,18 @@ for xml in all_files:
   list_file.write('\n')
 
 list_file.close()
+
+classes = ["fullgolfclub", "golfball", "golfclub", "golfer", "golfer_front"]
+
+
+#Write out our classes file
+classes_file = open(path + '/voc_classes.txt', 'w')
+classes_file.truncate(0)
+
+for myclass in classes:
+  classes_file.write(myclass + "\n")
+
+classes_file.close()
+
+
 
