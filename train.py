@@ -19,10 +19,15 @@ import tensorflow as tf
 
 
 def _main():
-    annotation_path = 'train.txt'
-    log_dir = '/content/drive/My Drive/Keras_Yolo/000/' #'logs/000/'
-    classes_path = 'model_data/voc_classes.txt'
-    anchors_path = 'model_data/yolo_anchors.txt'
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    parser.add_argument('--path', type=str, help='Path to project files' )
+    FLAGS = parser.parse_args()
+    path = flags.path
+
+    annotation_path = path + 'train.txt'
+    log_dir = path #'logs/000/'
+    classes_path = path + '/voc_classes.txt'
+    anchors_path = path + '/yolo_anchors.txt'
     class_names = get_classes(classes_path)
     num_classes = len(class_names)
     anchors = get_anchors(anchors_path)
@@ -210,3 +215,4 @@ def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, n
 
 if __name__ == '__main__':
     _main()
+
