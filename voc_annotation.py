@@ -1,73 +1,115 @@
-import xml.etree.ElementTree as ET
+import numpy as np
 import argparse
 import os
 
+class YOLO_Kmeans:
 
-classes = ["fullgolfclub", "golfball", "golfclub", "golfer", "golfer_front"]
+    def __init__(self, cluster_number, path):
+        self.cluster_number = cluster_number
+        self.filename = path + "/train.txt"
+        self.path = path
 
-def convert_annotation(xml, list_file):
-    in_file = open(xml)
-    tree=ET.parse(in_file)
-    root = tree.getroot()
+        print(self.filename)
 
-    for obj in root.iter('object'):
-        difficult = obj.find('difficult').text
-        cls = obj.find('name').text
-        if cls not in classes or int(difficult)==1:
-            continue
-        cls_id = classes.index(cls)
-        xmlbox = obj.find('bndbox')
-        b = (int(float(xmlbox.find('xmin').text)), 
-        int(float(xmlbox.find('ymin').text)), 
-        int(float(xmlbox.find('xmax').text)), 
-        int(float(xmlbox.find('ymax').text)))
-        list_file.write(" " + ",".join([str(a) for a in b]) + ',' + str(cls_id))
+    def iou(self, boxes, clusters):  # 1 box -> k clusters
+        n = boxes.shape[0]
+        k = self.cluster_number
+
+        box_area = boxes[:, 0] * boxes[:, 1]
+        box_area = box_area.repeat(k)
+        box_area = np.reshape(box_area, (n, k))
+
+        cluster_area = clusters[:, 0] * clusters[:, 1]
+        cluster_area = np.tile(cluster_area, [1, n])
+        cluster_area = np.reshape(cluster_area, (n, k))
+
+        box_w_matrix = np.reshape(boxes[:, 0].repeat(k), (n, k))
+        cluster_w_matrix = np.reshape(np.tile(clusters[:, 0], (1, n)), (n, k))
+        min_w_matrix = np.minimum(cluster_w_matrix, box_w_matrix)
+
+        box_h_matrix = np.reshape(boxes[:, 1].repeat(k), (n, k))
+        cluster_h_matrix = np.reshape(np.tile(clusters[:, 1], (1, n)), (n, k))
+        min_h_matrix = np.minimum(cluster_h_matrix, box_h_matrix)
+        inter_area = np.multiply(min_w_matrix, min_h_matrix)
+
+        result = inter_area / (box_area + cluster_area - inter_area)
+        return result
+
+    def avg_iou(self, boxes, clusters):
+        accuracy = np.mean([np.max(self.iou(boxes, clusters), axis=1)])
+        return accuracy
+
+    def kmeans(self, boxes, k, dist=np.median):
+        box_number = boxes.shape[0]
+        distances = np.empty((box_number, k))
+        last_nearest = np.zeros((box_number,))
+        np.random.seed()
+        clusters = boxes[np.random.choice(
+            box_number, k, replace=False)]  # init k clusters
+        while True:
+
+            distances = 1 - self.iou(boxes, clusters)
+
+            current_nearest = np.argmin(distances, axis=1)
+            if (last_nearest == current_nearest).all():
+                break  # clusters won't change
+            for cluster in range(k):
+                clusters[cluster] = dist(  # update clusters
+                    boxes[current_nearest == cluster], axis=0)
+
+            last_nearest = current_nearest
+
+        return clusters
+
+    def result2txt(self, data):
+        f = open(self.path + "/yolo_anchors.txt", 'w')
+        f.truncate(0)
+        row = np.shape(data)[0]
+        for i in range(row):
+            if i == 0:
+                x_y = "%d,%d" % (data[i][0], data[i][1])
+            else:
+                x_y = ", %d,%d" % (data[i][0], data[i][1])
+            f.write(x_y)
+        f.close()
+
+    def txt2boxes(self):
+        f = open(self.filename, 'r')
+        dataSet = []
+        for line in f:
+            #print(line)
+            infos = line.split(" ")
+            length = len(infos)
+            #print(length)
+            for i in range(1, length):
+                #print(infos[i].split(","))
+                width = int(infos[i].split(",")[2]) - \
+                    int(infos[i].split(",")[0])
+                height = int(infos[i].split(",")[3]) - \
+                    int(infos[i].split(",")[1])
+                dataSet.append([width, height])
+        result = np.array(dataSet)
+        f.close()
+
+        return result
+
+    def txt2clusters(self):
+        all_boxes = self.txt2boxes()
+        result = self.kmeans(all_boxes, k=self.cluster_number)
+        result = result[np.lexsort(result.T[0, None])]
+        self.result2txt(result)
+        print("K anchors:\n {}".format(result))
+        print("Accuracy: {:.2f}%".format(
+            self.avg_iou(all_boxes, result) * 100))
 
 
-import glob
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    parser.add_argument('--path', type=str, help='Path to project files' )
+    FLAGS = parser.parse_args()
+    path = FLAGS.path
 
-
-parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
-parser.add_argument('--path', type=str, help='Path to project files' )
-FLAGS = parser.parse_args()
-path = FLAGS.path
-
-if path == None:
-  exit
-
-if os.path.exists(path) == False:
-  os.mkdir(path)
-
-all_files = glob.glob("/content/mobilenetv3-yolov3/AllDataStripped/*/*/*.xml")
-list_file = open(path + '/train.txt', 'w')
-
-for xml in all_files:
-  file, ext = os.path.splitext(xml)
-  
-  jpg_file = file + ".jpg"
-  if not os.path.exists(jpg_file):
-    continue
-
-  jpg_file_no_space = jpg_file.replace(' ','_')
-  os.rename(jpg_file, jpg_file_no_space)
-
-  list_file.write(jpg_file_no_space)
-  convert_annotation(xml, list_file)
-  list_file.write('\n')
-
-list_file.close()
-
-
-
-
-#Write out our classes file
-classes_file = open(path + '/voc_classes.txt', 'w')
-classes_file.truncate(0)
-
-for myclass in classes:
-  classes_file.write(myclass + "\n")
-
-classes_file.close()
-
-
+    cluster_number = 9
+    kmeans = YOLO_Kmeans(cluster_number, path)
+    kmeans.txt2clusters()
 
