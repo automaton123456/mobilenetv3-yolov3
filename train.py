@@ -8,6 +8,7 @@ from tensorflow.keras.layers import Input, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+import argparse
 
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
 from yolo3.utils import get_random_data
@@ -22,9 +23,9 @@ def _main():
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     parser.add_argument('--path', type=str, help='Path to project files' )
     FLAGS = parser.parse_args()
-    path = flags.path
+    path = FLAGS.path
 
-    annotation_path = path + 'train.txt'
+    annotation_path = path + '/train.txt'
     log_dir = path #'logs/000/'
     classes_path = path + '/voc_classes.txt'
     anchors_path = path + '/yolo_anchors.txt'
@@ -61,7 +62,7 @@ def _main():
 
     # Train with frozen layers first, to get a stable loss.
     # Adjust num epochs to your dataset. This step is enough to obtain a not bad model.
-    if True:
+    if False: #Don't fine tune!!
         model.compile(optimizer=Adam(lr=1e-3), loss={
             # use custom yolo_loss Lambda layer.
             'yolo_loss': lambda y_true, y_pred: y_pred})
