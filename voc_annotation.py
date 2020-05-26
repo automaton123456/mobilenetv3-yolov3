@@ -1,4 +1,9 @@
 import xml.etree.ElementTree as ET
+import argparse
+import os
+
+
+classes = ["fullgolfclub", "golfball", "golfclub", "golfer", "golfer_front"]
 
 def convert_annotation(xml, list_file):
     in_file = open(xml)
@@ -20,19 +25,20 @@ def convert_annotation(xml, list_file):
 
 
 import glob
-import os
 
 
 parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
 parser.add_argument('--path', type=str, help='Path to project files' )
 FLAGS = parser.parse_args()
-path = flags.path
+path = FLAGS.path
 
-yolo = YOLO(path=FLAGS.path,size=FLAGS.size)
+if path == None:
+  exit
 
+if os.path.exists(path) == False:
+  os.mkdir(path)
 
 all_files = glob.glob("/content/mobilenetv3-yolov3/AllDataStripped/*/*/*.xml")
-
 list_file = open(path + '/train.txt', 'w')
 
 for xml in all_files:
@@ -51,7 +57,7 @@ for xml in all_files:
 
 list_file.close()
 
-classes = ["fullgolfclub", "golfball", "golfclub", "golfer", "golfer_front"]
+
 
 
 #Write out our classes file
